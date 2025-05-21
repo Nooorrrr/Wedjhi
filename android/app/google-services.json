@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "612830646559",
+    "project_id": "wedjhi",
+    "storage_bucket": "wedjhi.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:612830646559:android:490814ff6a34cd1ce0e02a",
+        "android_client_info": {
+          "package_name": "com.example.wedjhhi"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB0FVkyPPnkZxf5vCmGIHscbgsRJVZWTCc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
