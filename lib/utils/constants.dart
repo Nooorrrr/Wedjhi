@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 /// App-wide constants for consistent UI styling
 class AppColors {
   // Primary brand colors
-  static const Color primary = Color(0xFF3F51B5); // Indigo
-  static const Color primaryDark = Color(0xFF303F9F); // Darker indigo
-  static const Color accent = Color(0xFF2196F3); // Blue
+  static const Color primary = Color(0xFFFDD835); // Yellow
+  static const Color primaryDark = Color(0xFFFBC02D); // Darker yellow
+  static const Color accent = Color(0xFFFFEB3B); // Light yellow
 
   // Status colors
   static const Color success = Color(0xFF4CAF50); // Green

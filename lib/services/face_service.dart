@@ -50,38 +50,30 @@ class FaceService {
   DateTime? _lastInitialized;
 
   // INCREASED thresholds for more accurate matching and fewer false positives
-  static const double SIMILARITY_THRESHOLD =
-      0.92; // Significantly increased from 0.88 for fewer false positives
+  static const double SIMILARITY_THRESHOLD = 0.92; // Significantly increased from 0.88 for fewer false positives
   static const double HIGH_CONFIDENCE_THRESHOLD = 0.95; // Increased from 0.93
-  static const double ANGLE_THRESHOLD =
-      7.0; // Decreased from 8.0 for stricter angle matching
-  static const double EYE_RATIO_MIN = 0.87; // More strict ratio check
-  static const double EYE_RATIO_MAX = 1.13; // More strict ratio check
+  static const double ANGLE_THRESHOLD = 8.0; // Increased from 7.0 for more lenient angle matching
+  static const double EYE_RATIO_MIN = 0.85; // More lenient ratio check
+  static const double EYE_RATIO_MAX = 1.15; // More lenient ratio check
   static const int MAX_IMAGE_DIMENSION = 1024; // Limit image size
-  static const int MIN_LANDMARKS =
-      5; // Increased from 4 to require ALL key landmarks
+  static const int MIN_LANDMARKS = 5; // Increased from 4 to require ALL key landmarks
 
   /// Initialize by loading the reference image from Firestore
-  Future<String> initialize() async {
+  Future<String> initialize({String? email}) async {
     try {
       _isInitialized = false;
 
-      // Get the current user's ID for debugging
-      final user = authService.currentUser;
-      if (user == null) {
-        print("[FaceService] ERROR: No user is logged in");
-        return 'No user is logged in. Please log in first.';
+      if (email == null) {
+        print("[FaceService] ERROR: Email is required for initialization");
+        return 'Email is required for face verification.';
       }
 
-      _userId = user.uid;
-      print("[FaceService] Initializing for user: $_userId");
-
-      // Get the current user's face image from Firestore
-      final String? base64Image = await authService.getUserFaceImage();
+      // Get the user's face image from Firestore using email
+      final String? base64Image = await authService.getUserFaceImageByEmail(email);
 
       if (base64Image == null || base64Image.isEmpty) {
-        print("[FaceService] ERROR: No face image found for user: $_userId");
-        return 'No face image found. Please update your profile with a face image.';
+        print("[FaceService] ERROR: No face image found for email: $email");
+        return 'No face image found. Please register first with a face image.';
       }
 
       print(
@@ -90,7 +82,7 @@ class FaceService {
       // Check if the base64 string is valid
       if (!_isValidBase64(base64Image)) {
         print("[FaceService] ERROR: Invalid base64 string format");
-        return 'Error: Invalid image format. Please update your profile with a new image.';
+        return 'Error: Invalid image format. Please register again with a new image.';
       }
 
       // Convert base64 to bytes
@@ -101,7 +93,7 @@ class FaceService {
 
         if (_referenceImageBytes == null || _referenceImageBytes!.isEmpty) {
           print("[FaceService] ERROR: Empty decoded image data");
-          return 'Error decoding face image. Please update your profile with a new image.';
+          return 'Error decoding face image. Please register again with a new image.';
         }
       } catch (e) {
         print("[FaceService] ERROR: Failed to decode base64 image: $e");
@@ -112,7 +104,7 @@ class FaceService {
       try {
         // Create a temporary file with the bytes
         final tempDir = await getTemporaryDirectory();
-        final tempFile = File('${tempDir.path}/temp_reference_$_userId.jpg');
+        final tempFile = File('${tempDir.path}/temp_reference_${email ?? "unknown"}.jpg');
         await tempFile.writeAsBytes(_referenceImageBytes!);
 
         print("[FaceService] Temporary file created at: ${tempFile.path}");
@@ -125,7 +117,7 @@ class FaceService {
 
         if (_referenceFaces == null || _referenceFaces!.isEmpty) {
           print("[FaceService] ERROR: No face detected in reference image");
-          return 'No face detected in your reference image. Please update your profile with a clearer image.';
+          return 'No face detected in your reference image. Please register again with a clearer image.';
         }
 
         if (_referenceFaces!.length > 1) {
@@ -137,7 +129,7 @@ class FaceService {
         // Check reference face quality
         if (!_isFaceQualityGood(_referenceFaces!.first)) {
           print("[FaceService] ERROR: Reference face quality not good enough");
-          return 'Reference face quality is not good enough. Please update your profile with a clearer image.';
+          return 'Reference face quality is not good enough. Please register again with a clearer image.';
         }
 
         // Log face detection quality information
@@ -686,13 +678,14 @@ class FaceService {
           (detectedEyeNoseEyeAngle - referenceEyeNoseEyeAngle).abs();
 
       // If this critical angle differs too much, it's not the same person
-      if (eyeNoseEyeAngleDiff > 7.0) {
+      if (eyeNoseEyeAngleDiff > ANGLE_THRESHOLD) {
         print(
-            "[FaceService] Eye-nose-eye angle difference too large: $eyeNoseEyeAngleDiff°");
-        return result; // Early return - strict requirement
+            "[FaceService] Eye-nose-eye angle difference too large: $eyeNoseEyeAngleDiff° (threshold: $ANGLE_THRESHOLD°)");
+        // Instead of immediate rejection, reduce the similarity score
+        similarities['eyeNoseEyeAngle'] = 0.5;
+      } else {
+        similarities['eyeNoseEyeAngle'] = 1 - (eyeNoseEyeAngleDiff / 180);
       }
-
-      similarities['eyeNoseEyeAngle'] = 1 - (eyeNoseEyeAngleDiff / 180);
 
       // 2.2 Left eye angle (from horizontal)
       double detectedLeftEyeAngle =
@@ -1125,7 +1118,17 @@ class FaceService {
       // 3. Eye-nose-eye angle (face shape)
       final double detectedEyeNoseEyeAngle = _calculateAngle(detectedLeftEye, detectedNose, detectedRightEye);
       final double referenceEyeNoseEyeAngle = _calculateAngle(referenceLeftEye, referenceNose, referenceRightEye);
-      similarities['eyeNoseEyeAngle'] = 1 - (detectedEyeNoseEyeAngle - referenceEyeNoseEyeAngle).abs() / 180;
+      final double eyeNoseEyeAngleDiff = (detectedEyeNoseEyeAngle - referenceEyeNoseEyeAngle).abs();
+
+      // If this critical angle differs too much, it's not the same person
+      if (eyeNoseEyeAngleDiff > ANGLE_THRESHOLD) {
+        print(
+            "[FaceService] Eye-nose-eye angle difference too large: $eyeNoseEyeAngleDiff° (threshold: $ANGLE_THRESHOLD°)");
+        // Instead of immediate rejection, reduce the similarity score
+        similarities['eyeNoseEyeAngle'] = 0.5;
+      } else {
+        similarities['eyeNoseEyeAngle'] = 1 - (eyeNoseEyeAngleDiff / 180);
+      }
 
       // Log all similarity scores for debugging
       print("[FaceService] Individual similarity scores:");
@@ -1201,6 +1204,75 @@ class FaceService {
       print("[FaceService] Error getting comparison details: $e");
       return {'error': e.toString()};
     }
+  }
+
+  /// Compare two face images and return similarity score
+  Future<Map<String, dynamic>> compareTwoFaces(String imagePath1, String imagePath2) async {
+    return _safelyExecuteFaceOperation(() async {
+      print("[FaceService] Comparing two faces from paths: $imagePath1 and $imagePath2");
+
+      // Process first image
+      final InputImage inputImage1 = InputImage.fromFilePath(imagePath1);
+      final List<Face> faces1 = await _faceDetector.processImage(inputImage1);
+
+      if (faces1.isEmpty) {
+        return {
+          'success': false,
+          'message': 'No face detected in first image',
+          'similarity': 0.0,
+        };
+      }
+
+      // Process second image
+      final InputImage inputImage2 = InputImage.fromFilePath(imagePath2);
+      final List<Face> faces2 = await _faceDetector.processImage(inputImage2);
+
+      if (faces2.isEmpty) {
+        return {
+          'success': false,
+          'message': 'No face detected in second image',
+          'similarity': 0.0,
+        };
+      }
+
+      // Get the first face from each image
+      final Face face1 = faces1.first;
+      final Face face2 = faces2.first;
+
+      // Check face quality for both faces
+      if (!_isFaceQualityGood(face1)) {
+        return {
+          'success': false,
+          'message': 'First face quality not good enough',
+          'similarity': 0.0,
+        };
+      }
+
+      if (!_isFaceQualityGood(face2)) {
+        return {
+          'success': false,
+          'message': 'Second face quality not good enough',
+          'similarity': 0.0,
+        };
+      }
+
+      // Calculate similarity score
+      final double similarityScore = _calculateFaceSimilarity(face1, face2);
+      final Map<String, dynamic> details = _getComparisonDetails(face1, face2);
+
+      // Determine if faces match based on similarity threshold
+      final bool isMatch = similarityScore >= SIMILARITY_THRESHOLD;
+
+      return {
+        'success': true,
+        'isMatch': isMatch,
+        'similarity': similarityScore,
+        'message': isMatch
+            ? 'Faces match with ${(similarityScore * 100).toStringAsFixed(1)}% confidence'
+            : 'Faces do not match (${(similarityScore * 100).toStringAsFixed(1)}% similarity)',
+        'details': details,
+      };
+    }, 'two-face-comparison');
   }
 }
 

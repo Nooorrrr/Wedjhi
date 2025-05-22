@@ -8,6 +8,7 @@ import 'face_recognition_screen.dart';
 import 'face_login_screen.dart';
 import 'signup_screen.dart';
 import 'forgot_password_screen.dart';
+import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   final CameraDescription camera;
@@ -76,8 +77,7 @@ class _LoginScreenState extends State<LoginScreen>
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(
-              builder: (context) =>
-                  FaceRecognitionScreen(camera: widget.camera),
+              builder: (context) => HomeScreen(camera: widget.camera),
             ),
             (route) => false,
           );
@@ -269,6 +269,12 @@ class _LoginScreenState extends State<LoginScreen>
                                 icon: Icons.login,
                                 isLoading: _isLoading,
                                 onPressed: _login,
+                              ),
+                              const SizedBox(height: 16),
+                              AppOutlinedButton(
+                                text: 'Login with Face',
+                                icon: Icons.face_retouching_natural,
+                                onPressed: _showFaceLogin,
                               ),
                             ],
                           ),

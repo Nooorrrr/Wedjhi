@@ -7,6 +7,7 @@ import '../services/auth_service.dart';
 import 'face_recognition_screen.dart';
 import 'face_capture_screen.dart';
 import 'login_screen.dart';
+import 'home_screen.dart';
 
 class SignupScreen extends StatefulWidget {
   final CameraDescription camera;
@@ -141,7 +142,7 @@ class _SignupScreenState extends State<SignupScreen>
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
-            builder: (context) => FaceRecognitionScreen(camera: widget.camera),
+            builder: (context) => HomeScreen(camera: widget.camera),
           ),
           (route) => false,
         );

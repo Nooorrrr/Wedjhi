@@ -7,6 +7,7 @@ import '../widgets/app_button.dart';
 import '../services/auth_service.dart';
 import '../services/face_service.dart';
 import 'face_recognition_screen.dart';
+import 'home_screen.dart';
 
 class FaceLoginScreen extends StatefulWidget {
   final CameraDescription camera;
@@ -233,7 +234,7 @@ class _FaceLoginScreenState extends State<FaceLoginScreen>
       // Initialize face service with user's reference face from Firestore
       await authService.signIn(
           widget.email, ''); // Attempt sign in without password to load user
-      final initResult = await faceService.initialize();
+      final initResult = await faceService.initialize(email: widget.email);
 
       if (!initResult.contains('Ready for face verification')) {
         setState(() {
@@ -272,8 +273,7 @@ class _FaceLoginScreenState extends State<FaceLoginScreen>
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(
-              builder: (context) =>
-                  FaceRecognitionScreen(camera: widget.camera),
+              builder: (context) => HomeScreen(camera: widget.camera),
             ),
             (route) => false,
           );

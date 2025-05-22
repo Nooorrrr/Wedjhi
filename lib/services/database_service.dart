@@ -122,6 +122,35 @@ class DatabaseService {
     }
   }
 
+  /// Get user data by email from Firestore
+  Future<Map<String, dynamic>?> getUserDataByEmail(String email) async {
+    try {
+      print("[DatabaseService] Getting user data for email: $email");
+
+      // Query Firestore for user with matching email
+      QuerySnapshot querySnapshot = await _usersCollection
+          .where('email', isEqualTo: email)
+          .limit(1)
+          .get()
+          .timeout(Duration(seconds: 10), onTimeout: () {
+        throw TimeoutException("Timeout getting user data by email");
+      });
+
+      if (querySnapshot.docs.isEmpty) {
+        print("[DatabaseService] No user found with email: $email");
+        return null;
+      }
+
+      Map<String, dynamic> userData = querySnapshot.docs.first.data() as Map<String, dynamic>;
+      print("[DatabaseService] Retrieved user data for email: $email");
+
+      return userData;
+    } catch (e) {
+      print("[DatabaseService] ERROR getting user data by email: $e");
+      return null;
+    }
+  }
+
   /// Get reference face image for a user
   Future<String?> getUserFaceImage(String userId) async {
     try {

@@ -20,37 +20,42 @@ class WelcomeScreen extends StatelessWidget {
         child: Padding(
           padding: AppPadding.screen,
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // App logo
-              Container(
-                height: 120,
-                width: 120,
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
-                  shape: BoxShape.circle,
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // App logo
+                    Container(
+                      height: 120,
+                      width: 120,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.face,
+                        size: 70,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    // App title
+                    Text(
+                      'Wedjhi',
+                      style: AppTextStyles.headline1,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    // Short tagline
+                    Text(
+                      'Welcome to wedjhi\n an app win tshouf fiha wedjhak',
+                      style: AppTextStyles.subtitle,
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
-                child: const Icon(
-                  Icons.face,
-                  size: 70,
-                  color: AppColors.primary,
-                ),
               ),
-              const SizedBox(height: 24),
-              // App title
-              Text(
-                'FaceAuth',
-                style: AppTextStyles.headline1,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              // Short tagline
-              Text(
-                'Secure face recognition login',
-                style: AppTextStyles.subtitle,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 60),
               // Buttons
               AppButton(
                 text: 'Login',
@@ -77,15 +82,7 @@ class WelcomeScreen extends StatelessWidget {
                   );
                 },
               ),
-              const SizedBox(height: 30),
-              // Version text at bottom
-              const Text(
-                'v1.0',
-                style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 12,
-                ),
-              ),
+              
             ],
           ),
         ),

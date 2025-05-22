@@ -203,6 +203,24 @@ class AuthService {
     }
   }
 
+  /// Get user's face image by email
+  Future<String?> getUserFaceImageByEmail(String email) async {
+    try {
+      // Get user data from database using email
+      final userData = await databaseService.getUserDataByEmail(email);
+      if (userData == null) {
+        print("Cannot get face image: No user found with email $email");
+        return null;
+      }
+
+      // Extract face image from user data
+      return userData['faceImageBase64'] as String?;
+    } catch (e) {
+      print("Error getting user face image by email: $e");
+      return null;
+    }
+  }
+
   /// Update user's email (requires re-authentication)
   Future<bool> updateEmail(String newEmail, String password) async {
     try {
