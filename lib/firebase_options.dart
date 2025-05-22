@@ -71,4 +71,5 @@ class DefaultFirebaseOptions {
     authDomain: 'wedjhi.firebaseapp.com',
     storageBucket: 'wedjhi.firebasestorage.app',
   );
+
 }
